@@ -5,8 +5,9 @@ import { renderInvoicePdf } from '../lib/pdf.js';
 
 const created = Math.floor(Date.now() / 1000);
 const sessions = {
-  cs_paid: { id: 'cs_paid', payment_status: 'paid', created },
-  cs_unpaid: { id: 'cs_unpaid', payment_status: 'unpaid', created },
+  cs_paid: { id: 'cs_paid', status: 'complete', payment_status: 'paid', created },
+  cs_unpaid: { id: 'cs_unpaid', status: 'open', payment_status: 'unpaid', created },
+  cs_expired: { id: 'cs_expired', status: 'expired', payment_status: 'unpaid', created },
 };
 let lastCreate;
 const fakeStripe = {
@@ -14,7 +15,7 @@ const fakeStripe = {
     sessions: {
       create: async (params) => {
         lastCreate = params;
-        return { url: 'https://checkout.stripe.test/pay' };
+        return { id: 'cs_new', url: 'https://checkout.stripe.test/pay' };
       },
       retrieve: async (id) => {
         if (!sessions[id]) throw new Error('No such checkout.session');
@@ -59,10 +60,11 @@ test('gratis-PDF får vattenstämpel', async () => {
 
 test('checkout skapar Stripe-session i SEK', async () => {
   const res = await post('/api/checkout', {});
-  assert.deepEqual(await res.json(), { url: 'https://checkout.stripe.test/pay' });
+  assert.deepEqual(await res.json(), { id: 'cs_new', url: 'https://checkout.stripe.test/pay' });
   assert.equal(lastCreate.line_items[0].price_data.currency, 'sek');
   assert.equal(lastCreate.line_items[0].price_data.unit_amount, 9900);
   assert.equal(lastCreate.success_url, 'https://faktura.test/?session_id={CHECKOUT_SESSION_ID}');
+  assert.equal(lastCreate.cancel_url, 'https://faktura.test/?checkout=cancelled');
 });
 
 test('betalt köp ger licens som tar bort vattenstämpeln', async () => {
@@ -80,6 +82,7 @@ test('betalt köp ger licens som tar bort vattenstämpeln', async () => {
 
 test('obetalt, okänt eller ogiltigt köp låser inte upp', async () => {
   assert.equal((await fetch(`${base}/api/unlock?session_id=cs_unpaid`)).status, 402);
+  assert.equal((await fetch(`${base}/api/unlock?session_id=cs_expired`)).status, 410);
   assert.equal((await fetch(`${base}/api/unlock?session_id=cs_missing`)).status, 404);
   assert.equal((await fetch(`${base}/api/unlock?session_id=../x`)).status, 400);
   assert.equal((await post('/api/license', { token: 'fejk.nyckel' })).status, 400);

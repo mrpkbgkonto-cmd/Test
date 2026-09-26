@@ -39,10 +39,26 @@ Valfri Node-host (t.ex. Render, Railway, Fly.io):
 - Dela i grupper för egenföretagare/småföretagare; testa Google Ads på "fakturamall".
 - Rabattkoder skapas i Stripe Dashboard (kassan tillåter dem).
 
+## Automatiskt efter lansering
+
+| Vad | Hur |
+|---|---|
+| Köp som inte hann låsas upp | Köpet sparas i webbläsaren före betalningen och låses upp vid nästa besök – även om kunden stängde fliken eller betalningen tog tid. |
+| Paketuppdateringar | Dependabot öppnar PR:er (npm varje vecka, GitHub Actions varje månad). CI kör testerna och mergar automatiskt om de går igenom. |
+| Deploy | Uppdateringar hamnar på default-branchen; slå på automatisk deploy från den i din host. |
+| Utbetalningar | Stripe betalar ut till ditt bankkonto enligt schemat i Stripe Dashboard. |
+
+Engångsinställningar:
+
+1. Gör `main` till default-branch på GitHub (Dependabot jobbar mot default-branchen).
+2. Valfritt: slå på *Dependabot security updates* under Settings → Code security.
+3. Koppla hosten till repot med automatisk deploy vid push.
+
+Större versionsbyten av npm-paket mergas inte automatiskt – de kan ändra beteende som testerna inte fångar (t.ex. Stripes API-version).
+
 ## Bra att veta
 
 - Licensen sparas i kundens webbläsare. Vid byte av dator: "Kopiera licensnyckel" → "Har du en licensnyckel?".
-- Stänger kunden fliken innan omdirigeringen efter betalningen får den ingen nyckel automatiskt – kontrollera köpet i Stripe och hjälp manuellt.
 - Stripe tar en avgift per betalning. Redovisa moms och intäkter för försäljningen i ditt bolag.
 
 ## Struktur
@@ -55,4 +71,5 @@ lib/invoice.js     validering
 lib/token.js       signerade licensnycklar (HMAC)
 public/            webbappen (calc.js delas med servern)
 test/              node --test
+.github/           CI, Dependabot, auto-merge
 ```

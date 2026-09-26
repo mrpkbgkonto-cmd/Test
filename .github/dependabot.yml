@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Endast minor/patch – större versioner kan ändra beteende som testerna inte fångar (t.ex. Stripes API-version).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      npm:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

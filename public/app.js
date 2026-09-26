@@ -228,6 +228,8 @@ $('#buy').addEventListener('click', async () => {
     const res = await fetch('/api/checkout', { method: 'POST' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || !data.url) throw new Error(data.error || 'Kunde inte starta betalningen.');
+    // Sparas före omdirigeringen så att köpet hittas även om kunden aldrig kommer tillbaka via Stripe.
+    store.set('pendingCheckout', { id: data.id, at: Date.now() });
     location.href = data.url;
   } catch (err) {
     show(err.message, 'error');
@@ -249,15 +251,35 @@ $('#license').addEventListener('click', async () => {
   show('Pro är aktiverat.');
 });
 
-async function handleStripeReturn() {
-  const sid = new URLSearchParams(location.search).get('session_id');
-  if (!sid) return;
-  history.replaceState(null, '', location.pathname);
-  const res = await fetch(`/api/unlock?session_id=${encodeURIComponent(sid)}`);
+const PENDING_MAX_AGE = 7 * 86_400_000;
+
+// Låser upp Pro efter köp – både vid retur från Stripe och vid senare besök om kunden stängde fliken.
+async function recoverPurchase() {
+  const params = new URLSearchParams(location.search);
+  const returned = params.get('session_id');
+  if (location.search) history.replaceState(null, '', location.pathname);
+  if (params.get('checkout') === 'cancelled') return store.del('pendingCheckout');
+
+  const pending = store.get('pendingCheckout');
+  const id = returned || pending?.id;
+  if (!id) return;
+  if (isPro() && !returned) return store.del('pendingCheckout');
+
+  const res = await fetch(`/api/unlock?session_id=${encodeURIComponent(id)}`);
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) return show(data.error || 'Kunde inte verifiera betalningen.', 'error');
-  setPro(data.token, data.exp);
-  show('Tack för ditt köp! Vattenstämpeln är borta. Tips: kopiera licensnyckeln uppe till höger och spara den.');
+  if (res.ok) {
+    store.del('pendingCheckout');
+    setPro(data.token, data.exp);
+    return show('Tack för ditt köp! Vattenstämpeln är borta. Tips: kopiera licensnyckeln uppe till höger och spara den.');
+  }
+  const stillProcessing = res.status === 402 && Date.now() - (pending?.at ?? Date.now()) < PENDING_MAX_AGE;
+  if (stillProcessing) {
+    store.set('pendingCheckout', { id, at: pending?.at ?? Date.now() });
+    if (returned) show('Betalningen behandlas. Pro aktiveras automatiskt när den är klar.', 'upsell');
+    return;
+  }
+  store.del('pendingCheckout');
+  if (returned) show(data.error || 'Kunde inte verifiera betalningen.', 'error');
 }
 
 // ---------- PDF ----------
@@ -321,4 +343,4 @@ fetch('/api/config')
   })
   .catch(() => {});
 
-handleStripeReturn().catch(() => show('Kunde inte verifiera betalningen.', 'error'));
+recoverPurchase().catch(() => {});
