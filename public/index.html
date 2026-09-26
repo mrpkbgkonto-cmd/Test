@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skapa faktura gratis – PDF på en minut</title>
+  <meta name="description" content="Skapa en proffsig faktura med moms, F-skatt och bankgiro. Se resultatet direkt och ladda ner som PDF. Gratis att använda.">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo" aria-hidden="true">F</span><span id="appName">Fakturaverktyget</span></div>
+    <div class="status" id="status"></div>
+  </header>
+
+  <section class="hero">
+    <h1>Skapa en faktura på en minut</h1>
+    <p>Fyll i, se fakturan direkt och ladda ner som PDF. Gratis med vattenstämpel – <strong>Pro</strong> tar bort den.</p>
+  </section>
+
+  <main class="layout">
+    <form id="form" class="panel" novalidate>
+      <fieldset>
+        <legend>Från – ditt företag</legend>
+        <label>Företagsnamn *<input data-path="seller.name" autocomplete="organization"></label>
+        <div class="row2">
+          <label>Org.nr<input data-path="seller.orgNr" placeholder="556677-8899"></label>
+          <label>Momsreg.nr<input data-path="seller.vatNr" placeholder="SE556677889901"></label>
+        </div>
+        <label>Adress<textarea data-path="seller.address" rows="2" placeholder="Gatan 1&#10;123 45 Staden"></textarea></label>
+        <div class="row2">
+          <label>E-post<input type="email" data-path="seller.email" autocomplete="email"></label>
+          <label>Telefon<input type="tel" data-path="seller.phone" autocomplete="tel"></label>
+        </div>
+        <label>Bankgiro<input data-path="seller.bankgiro" placeholder="123-4567"></label>
+        <label class="check"><input type="checkbox" data-path="seller.fSkatt"> Godkänd för F-skatt</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Till – kund</legend>
+        <label>Kundens namn *<input data-path="buyer.name"></label>
+        <div class="row2">
+          <label>Org.nr<input data-path="buyer.orgNr"></label>
+          <label>Momsreg.nr<input data-path="buyer.vatNr"></label>
+        </div>
+        <label>Adress<textarea data-path="buyer.address" rows="2"></textarea></label>
+        <label>Er referens<input data-path="buyer.reference"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fakturauppgifter</legend>
+        <div class="row3">
+          <label>Fakturanr *<input data-path="number"></label>
+          <label>Fakturadatum<input type="date" data-path="date"></label>
+          <label>Förfallodatum<input type="date" data-path="dueDate"></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Rader</legend>
+        <div class="item item-head" aria-hidden="true">
+          <span>Beskrivning</span><span>Antal</span><span>Enhet</span><span>À-pris (kr)</span><span>Moms</span><span></span>
+        </div>
+        <div id="items"></div>
+        <button type="button" id="addItem" class="ghost">+ Lägg till rad</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Meddelande</legend>
+        <textarea data-path="notes" rows="3" aria-label="Meddelande"></textarea>
+      </fieldset>
+    </form>
+
+    <aside class="side">
+      <div class="actions">
+        <button type="button" id="download" class="primary">Ladda ner PDF</button>
+        <button type="button" id="buy" class="pro">Ta bort vattenstämpel</button>
+        <button type="button" id="newInvoice" class="ghost">Ny faktura</button>
+      </div>
+      <p id="msg" class="msg" role="status" hidden></p>
+      <div class="paper-wrap"><article id="preview" class="paper" aria-label="Förhandsvisning"></article></div>
+      <p class="small">
+        <button type="button" id="license" class="link">Har du en licensnyckel?</button>
+      </p>
+    </aside>
+  </main>
+
+  <footer class="foot">Dina uppgifter sparas bara i din webbläsare. PDF:en skapas utan att något lagras på servern.</footer>
+</body>
+</html>

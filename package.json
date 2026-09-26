@@ -1,0 +1,20 @@
+{
+  "name": "fakturaverktyget",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Enkelt fakturaverktyg: gratis PDF med vattenstämpel, Pro utan vattenstämpel via Stripe.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --env-file=.env --watch server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20.6"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "pdfkit": "^0.20.2",
+    "stripe": "^22.6.2"
+  }
+}
