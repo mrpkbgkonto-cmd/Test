@@ -70,7 +70,14 @@
       },
       "channels": [
         { "name": "mod-chatt" },
-        { "name": "mod-logg" }
+        {
+          "name": "mod-logg",
+          "overwrites": {
+            "@everyone": { "deny": ["ViewChannel"] },
+            "Moderator": { "allow": ["ViewChannel"] },
+            "carl-bot": { "allow": ["ViewChannel", "SendMessages", "EmbedLinks"] }
+          }
+        }
       ]
     }
   ]
