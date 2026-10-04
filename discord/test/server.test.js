@@ -104,6 +104,35 @@ test('rollordningen följer filen, övriga roller ligger kvar', () => {
   assert.deepEqual(plan(server, { roles: [{ name: 'Koloss' }, { name: 'Moderator' }, { name: 'Rekryt' }] }), []);
 });
 
+test('oldName byter namn och behåller id', async () => {
+  const server = fresh();
+  server.roles.push({ id: '20', name: 'Rekryt', position: 1, permissions: '0' });
+  const ops = plan(server, {
+    roles: [{ name: 'Recruit', oldName: 'Rekryt' }],
+    channels: [{
+      name: 'Text Channels',
+      oldName: 'Textkanaler',
+      type: 'category',
+      channels: [{ name: 'general', oldName: 'allmänt', overwrites: { Recruit: { allow: ['ViewChannel'] } } }],
+    }],
+  });
+  assert.deepEqual(ops.map(describe), [
+    '~ roll "Recruit": namn',
+    '~ kategori "Text Channels": namn',
+    '~ textkanal "general" i "Text Channels": namn, kanalbehörigheter',
+  ]);
+
+  const calls = [];
+  const client = { patch: async (path, body) => { calls.push([path, body]); return {}; } };
+  await execute(client, server, ops);
+  assert.deepEqual(calls, [
+    [`/guilds/${G}/roles/20`, { name: 'Recruit' }],
+    ['/channels/1', { name: 'Text Channels' }],
+    ['/channels/3', { name: 'general', permission_overwrites: [{ id: '20', type: 0, allow: bits('ViewChannel'), deny: '0' }] }],
+  ]);
+  assert.throws(() => plan(server, { roles: [{ name: 'X', oldName: '' }] }), /oldName/);
+});
+
 test('fel i konfigurationen ger tydliga meddelanden', () => {
   assert.throws(() => plan(fresh(), { channels: [{ name: 'x', type: 'karta' }] }), /Okänd kanaltyp/);
   assert.throws(() => plan(fresh(), { channels: [{ name: 'x', topik: 'stavfel' }] }), /Okänt fält "topik"/);

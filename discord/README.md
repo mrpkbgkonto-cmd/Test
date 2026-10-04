@@ -50,7 +50,7 @@ Se [`exempel.json`](exempel.json) för en komplett server.
 
 Behörigheter skrivs med Discords namn, t.ex. `ViewChannel`, `SendMessages`, `ManageMessages`, `KickMembers`, `Administrator`. Ett felstavat namn ger ett fel med alla giltiga namn.
 
-Matchning sker på namn (skiftläge och mellanslag/bindestreck spelar ingen roll). Fält som saknas i filen lämnas orörda. Utan `--prune` tas aldrig något bort. Botroller rörs aldrig.
+Matchning sker på namn (skiftläge och mellanslag/bindestreck spelar ingen roll). Byt namn på en roll eller kanal med `oldName`, t.ex. `{ "name": "rules", "oldName": "regler" }` – då behålls id, meddelanden och kopplingar från andra botar. Fält som saknas i filen lämnas orörda. Utan `--prune` tas aldrig något bort. Botroller rörs aldrig.
 
 Rollerna i filen sorteras i filens ordning. Roller som inte finns i filen, t.ex. botroller, ligger kvar på sina platser. Boten kan bara flytta roller som ligger under dess egen roll.
 

@@ -1,5 +1,5 @@
 {
-  "_info": "Plan för Nordwave Studios. Nya medlemmar ser bara Information tills de reagerat på reglerna och fått Rekryt (Carl-bot). Visa ändringar: node cli.js plan nordwave.json",
+  "_info": "Plan för Nordwave Studios. Nya medlemmar ser bara Information tills de reagerat på reglerna och fått Recruit (Carl-bot). Visa ändringar: node cli.js plan nordwave.json",
   "everyone": [
     "CreateInstantInvite", "ChangeNickname", "ReadMessageHistory",
     "SendMessages", "SendMessagesInThreads", "CreatePublicThreads", "EmbedLinks", "AttachFiles",
@@ -17,8 +17,8 @@
         "DeafenMembers", "MoveMembers", "ManageNicknames", "ViewAuditLog", "MentionEveryone", "CreateEvents"
       ]
     },
-    { "name": "Medlem", "color": "#2ecc71", "hoist": true, "permissions": ["ViewChannel", "CreatePrivateThreads", "CreateEvents"] },
-    { "name": "Rekryt", "color": "#1f8b4c", "hoist": true, "permissions": ["ViewChannel"] }
+    { "name": "Member", "color": "#2ecc71", "hoist": true, "permissions": ["ViewChannel", "CreatePrivateThreads", "CreateEvents"] },
+    { "name": "Recruit", "color": "#1f8b4c", "hoist": true, "permissions": ["ViewChannel"] }
   ],
   "channels": [
     {
@@ -30,48 +30,49 @@
       },
       "channels": [
         {
-          "name": "välkommen", "topic": "Välkommen till Nordwave Studios!",
+          "name": "welcome", "topic": "Welcome to Nordwave Studios!",
           "overwrites": { "@everyone": { "allow": ["ViewChannel"], "deny": ["SendMessages", "CreatePublicThreads"] }, "Moderator": { "allow": ["SendMessages"] } }
         },
         {
-          "name": "regler", "topic": "Läs reglerna innan du skriver.",
+          "name": "rules", "topic": "Read the rules before posting.",
           "overwrites": { "@everyone": { "allow": ["ViewChannel"], "deny": ["SendMessages", "CreatePublicThreads"] }, "Moderator": { "allow": ["SendMessages"] } }
         },
         {
-          "name": "nyheter", "topic": "Uppdateringar från teamet.",
+          "name": "news", "topic": "Updates from the team.",
           "overwrites": { "@everyone": { "allow": ["ViewChannel"], "deny": ["SendMessages", "CreatePublicThreads"] }, "Moderator": { "allow": ["SendMessages"] } }
         }
       ]
     },
     {
-      "name": "Textkanaler",
+      "name": "Text Channels",
       "type": "category",
       "channels": [
-        { "name": "allmänt", "topic": "Prata om allt." },
-        { "name": "presentera-dig", "topic": "Berätta vem du är." },
+        { "name": "general", "topic": "Talk about anything." },
+        { "name": "introductions", "topic": "Tell us who you are." },
         { "name": "off-topic", "slowmode": 5 },
-        { "name": "one-more-wave" }
+        { "name": "one-more-wave" },
+        { "name": "svenska", "topic": "För er som vill snacka svenska." }
       ]
     },
     {
-      "name": "Röstkanaler",
+      "name": "Voice Channels",
       "type": "category",
       "channels": [
-        { "name": "Allmänt", "type": "voice" },
-        { "name": "Möte", "type": "voice", "userLimit": 10 }
+        { "name": "General", "type": "voice" },
+        { "name": "Meeting", "type": "voice", "userLimit": 10 }
       ]
     },
     {
-      "name": "Moderering",
+      "name": "Moderation",
       "type": "category",
       "overwrites": {
         "@everyone": { "deny": ["ViewChannel"] },
         "Moderator": { "allow": ["ViewChannel"] }
       },
       "channels": [
-        { "name": "mod-chatt" },
+        { "name": "mod-chat" },
         {
-          "name": "mod-logg",
+          "name": "mod-log",
           "overwrites": {
             "@everyone": { "deny": ["ViewChannel"] },
             "Moderator": { "allow": ["ViewChannel"] },

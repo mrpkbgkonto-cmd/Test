@@ -13,8 +13,8 @@ const CHANGE_LABELS = {
   parent: 'kategori', overwrites: 'kanalbehörigheter',
 };
 
-const ROLE_KEYS = new Set(['name', 'color', 'hoist', 'mentionable', 'permissions']);
-const CHANNEL_KEYS = new Set(['name', 'type', 'channels', 'overwrites', ...Object.keys(CHANNEL_FIELDS)]);
+const ROLE_KEYS = new Set(['name', 'oldName', 'color', 'hoist', 'mentionable', 'permissions']);
+const CHANNEL_KEYS = new Set(['name', 'oldName', 'type', 'channels', 'overwrites', ...Object.keys(CHANNEL_FIELDS)]);
 const TOP_KEYS = new Set(['everyone', 'roles', 'channels']);
 
 // Discord gör textkanalnamn gemena med bindestreck, så matchning sker på normaliserat namn.
@@ -38,18 +38,26 @@ function checkKeys(obj, allowed, where) {
   }
 }
 
+function checkOldName(obj) {
+  if (obj.oldName !== undefined && (typeof obj.oldName !== 'string' || !obj.oldName.trim())) {
+    throw new ConfigError(`oldName för "${obj.name}" måste vara ett namn.`);
+  }
+}
+
 export function validate(config) {
   checkKeys(config, TOP_KEYS, 'konfigurationen');
   const roleNames = new Set();
   for (const role of config.roles ?? []) {
     checkKeys(role, ROLE_KEYS, 'en roll');
     if (typeof role.name !== 'string' || !role.name.trim()) throw new ConfigError('Varje roll måste ha ett namn.');
+    checkOldName(role);
     if (roleNames.has(role.name.toLowerCase())) throw new ConfigError(`Rollen "${role.name}" finns två gånger.`);
     roleNames.add(role.name.toLowerCase());
   }
   const checkChannel = (ch, inCategory) => {
     checkKeys(ch, CHANNEL_KEYS, 'en kanal');
     if (typeof ch.name !== 'string' || !ch.name.trim()) throw new ConfigError('Varje kanal måste ha ett namn.');
+    checkOldName(ch);
     const type = ch.type ?? 'text';
     if (!(type in TYPES)) throw new ConfigError(`Okänd kanaltyp "${type}" för "${ch.name}". Giltiga: ${Object.keys(TYPES).join(', ')}`);
     if (type === 'category' && inCategory) throw new ConfigError(`Kategorin "${ch.name}" kan inte ligga i en annan kategori.`);
@@ -175,7 +183,8 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
       hoist: role.hoist,
       mentionable: role.mentionable,
     });
-    const current = otherRoles.find((r) => !matchedRoles.has(r.id) && r.name.toLowerCase() === role.name.toLowerCase());
+    const findRole = (name) => otherRoles.find((r) => !matchedRoles.has(r.id) && r.name.toLowerCase() === name.toLowerCase());
+    const current = findRole(role.name) ?? (role.oldName !== undefined ? findRole(role.oldName) : undefined);
     if (!current) {
       ops.push({ op: 'createRole', name: role.name, label: where, body });
       continue;
@@ -209,7 +218,9 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
   const planChannel = (entry, parent, inheritedOverwrites) => {
     const type = TYPES[entry.type ?? 'text'];
     const where = `${typeLabel(type)} "${entry.name}"${parent ? ` i "${parent.name}"` : ''}`;
-    const current = findChannel(entry.name, type, parent ? parent.id ?? 'ny' : null);
+    const parentId = parent ? parent.id ?? 'ny' : null;
+    const current = findChannel(entry.name, type, parentId)
+      ?? (entry.oldName !== undefined ? findChannel(entry.oldName, type, parentId) : undefined);
     const fields = {};
     for (const [cfg, api] of Object.entries(CHANNEL_FIELDS)) if (entry[cfg] !== undefined) fields[api] = entry[cfg];
 
@@ -227,6 +238,10 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
     }
 
     const op = { op: 'updateChannel', id: current.id, label: where, changes: [], fields: {} };
+    if (key(current.name) !== key(entry.name)) {
+      op.changes.push('name');
+      op.fields.name = entry.name;
+    }
     for (const [api, value] of Object.entries(fields)) {
       const fallback = typeof value === 'string' ? '' : typeof value === 'boolean' ? false : 0;
       if ((current[api] ?? fallback) !== value) {
@@ -322,6 +337,7 @@ export async function execute(client, { guildId, roles }, ops, onStep = () => {}
       }
       case 'updateRole':
         await client.patch(`/guilds/${guildId}/roles/${op.id}`, op.body);
+        if (op.body.name) roleIds.set(op.body.name.toLowerCase(), op.id);
         break;
       case 'reorderRoles': {
         const ids = op.order.map((r) => r.id ?? roleIds.get(r.name.toLowerCase()));
