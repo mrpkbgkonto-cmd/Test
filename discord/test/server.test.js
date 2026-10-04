@@ -51,12 +51,13 @@ test('plan beskriver nya roller, kategori och flytt av befintlig kanal', () => {
   assert.deepEqual(ops.map(describe), [
     '+ roll "Medlem"',
     '+ roll "Moderator"',
+    '~ rollordning (Moderator > Medlem)',
     '+ kategori "Info"',
     '+ textkanal "regler" i "Info"',
     '~ textkanal "allmänt" i "Info": kategori',
   ]);
   // Ny kanal i kategori ärver kategorins behörigheter
-  assert.deepEqual(ops[3].overwrites.map((o) => o.target), ['@everyone', 'Moderator']);
+  assert.deepEqual(ops[4].overwrites.map((o) => o.target), ['@everyone', 'Moderator']);
   assert.equal(ops[1].body.colors.primary_color, 0xe67e22);
 });
 
@@ -86,6 +87,23 @@ test('export följt av plan ger inga ändringar', () => {
   assert.deepEqual(plan(server, exported, { prune: true }), []);
 });
 
+test('rollordningen följer filen, övriga roller ligger kvar', () => {
+  const server = fresh();
+  server.roles[1].position = 3;
+  server.roles.push(
+    { id: '20', name: 'Rekryt', position: 2, permissions: '0' },
+    { id: '10', name: 'Koloss', position: 1, permissions: '0' },
+    { id: '30', name: 'Bot2', position: 1, permissions: '0', managed: true },
+    { id: '40', name: 'Moderator', position: 1, permissions: '0' },
+  );
+  const ops = plan(server, { roles: [{ name: 'Koloss' }, { name: 'Moderator' }, { name: 'Rekryt' }] });
+  assert.deepEqual(ops.map(describe), ['~ rollordning (Koloss > Moderator > Rekryt)']);
+  assert.deepEqual(ops[0].order.map((r) => r.name), ['MinBot', 'Koloss', 'Moderator', 'Bot2', 'Rekryt']);
+
+  for (const [i, r] of ops[0].order.entries()) server.roles.find((x) => x.id === r.id).position = 5 - i;
+  assert.deepEqual(plan(server, { roles: [{ name: 'Koloss' }, { name: 'Moderator' }, { name: 'Rekryt' }] }), []);
+});
+
 test('fel i konfigurationen ger tydliga meddelanden', () => {
   assert.throws(() => plan(fresh(), { channels: [{ name: 'x', type: 'karta' }] }), /Okänd kanaltyp/);
   assert.throws(() => plan(fresh(), { channels: [{ name: 'x', topik: 'stavfel' }] }), /Okänt fält "topik"/);
@@ -104,9 +122,14 @@ test('execute använder id:n från nyss skapade roller och kategorier', async ()
   const server = fresh();
   await execute(client, server, plan(server, config));
 
-  const [medlem, moderator, category, regler, move] = calls;
+  const [medlem, moderator, order, category, regler, move] = calls;
   assert.deepEqual(medlem.slice(0, 2), ['POST', `/guilds/${G}/roles`]);
   assert.equal(moderator[2].name, 'Moderator');
+  assert.deepEqual(order, ['PATCH', `/guilds/${G}/roles`, [
+    { id: '900', position: 3 },
+    { id: '501', position: 2 },
+    { id: '500', position: 1 },
+  ]]);
   assert.deepEqual(category[2].permission_overwrites, [
     { id: G, type: 0, allow: '0', deny: bits('SendMessages') },
     { id: '501', type: 0, allow: bits('SendMessages'), deny: '0' },

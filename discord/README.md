@@ -52,6 +52,8 @@ Behörigheter skrivs med Discords namn, t.ex. `ViewChannel`, `SendMessages`, `Ma
 
 Matchning sker på namn (skiftläge och mellanslag/bindestreck spelar ingen roll). Fält som saknas i filen lämnas orörda. Utan `--prune` tas aldrig något bort. Botroller rörs aldrig.
 
+Rollerna i filen sorteras i filens ordning. Roller som inte finns i filen, t.ex. botroller, ligger kvar på sina platser. Boten kan bara flytta roller som ligger under dess egen roll.
+
 ## Tester
 
 ```bash

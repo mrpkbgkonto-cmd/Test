@@ -23,6 +23,8 @@ export const key = (name) => String(name).trim().toLowerCase().replace(/\s+/g, '
 const compact = (obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 const roleColor = (role) => role.colors?.primary_color ?? role.color ?? 0;
 const typeLabel = (type) => TYPE_LABELS[type] ?? 'kanal';
+// Högst först. Samma position sorteras på id för en stabil ordning.
+const byHeight = (a, b) => b.position - a.position || (BigInt(a.id) < BigInt(b.id) ? -1 : 1);
 
 function parseColor(color, where) {
   if (!/^#[0-9a-f]{6}$/i.test(color)) throw new ConfigError(`Ogiltig färg "${color}" i ${where} – använd #rrggbb.`);
@@ -107,7 +109,7 @@ export function exportConfig({ guildId, roles, channels }) {
     everyone: everyone && toNames(everyone.permissions),
     roles: roles
       .filter((r) => r.id !== guildId && !r.managed)
-      .sort((a, b) => b.position - a.position)
+      .sort(byHeight)
       .map((r) => compact({
         name: r.name,
         color: roleColor(r) ? `#${roleColor(r).toString(16).padStart(6, '0')}` : undefined,
@@ -161,8 +163,9 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
     }
   }
 
-  // Roller – nya roller hamnar längst ner, så de skapas bakifrån för att den första i listan ska hamna högst.
+  // Roller – nya roller hamnar längst ner, rollordningen sätts efteråt.
   const matchedRoles = new Set();
+  const configRoleIds = new Map();
   for (const role of [...(config.roles ?? [])].reverse()) {
     const where = `roll "${role.name}"`;
     const body = compact({
@@ -178,6 +181,7 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
       continue;
     }
     matchedRoles.add(current.id);
+    configRoleIds.set(role, current.id);
     if (current.managed) continue;
     const changes = [];
     if (current.name !== role.name) changes.push('name');
@@ -189,6 +193,9 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
       ops.push({ op: 'updateRole', id: current.id, label: where, changes, body: Object.fromEntries(changes.map((c) => [c, body[c]])) });
     }
   }
+
+  const reorder = planRoleOrder(otherRoles, config.roles ?? [], configRoleIds);
+  if (reorder) ops.push(reorder);
 
   // Kanaler
   const used = new Set();
@@ -260,6 +267,25 @@ export function plan({ guildId, roles, channels }, config, { prune = false } = {
   return ops;
 }
 
+/** Rollerna i filen byter plats med varandra till filens ordning. Övriga roller, t.ex. botroller, ligger kvar. */
+function planRoleOrder(roles, configRoles, ids) {
+  const entries = new Map(configRoles.map((r) => [r, compact({ id: ids.get(r), name: r.name })]));
+  const byId = new Map([...entries.values()].filter((e) => e.id).map((e) => [e.id, e]));
+  // Nya roller hamnar längst ner.
+  const current = [
+    ...[...roles].sort(byHeight).map((r) => byId.get(r.id) ?? { id: r.id, name: r.name }),
+    ...[...configRoles].reverse().filter((r) => !ids.has(r)).map((r) => entries.get(r)),
+  ];
+  const wanted = configRoles.map((r) => entries.get(r));
+  const listed = new Set(wanted);
+  let next = 0;
+  const order = current.map((e) => (listed.has(e) ? wanted[next++] : e));
+  // Nya rollers inbördes ordning går inte att förutse, så den sätts alltid när fler än en roll finns i filen.
+  const created = configRoles.some((r) => !ids.has(r));
+  if (!(created && configRoles.length > 1) && order.every((e, i) => e === current[i])) return undefined;
+  return { op: 'reorderRoles', label: `rollordning (${wanted.map((e) => e.name).join(' > ')})`, order };
+}
+
 export function describe(op) {
   const sign = op.op.startsWith('create') ? '+' : op.op.startsWith('delete') ? '-' : '~';
   const changes = op.changes ? `: ${op.changes.map((c) => CHANGE_LABELS[c] ?? c).join(', ')}` : '';
@@ -297,6 +323,13 @@ export async function execute(client, { guildId, roles }, ops, onStep = () => {}
       case 'updateRole':
         await client.patch(`/guilds/${guildId}/roles/${op.id}`, op.body);
         break;
+      case 'reorderRoles': {
+        const ids = op.order.map((r) => r.id ?? roleIds.get(r.name.toLowerCase()));
+        const missing = op.order.find((r, i) => !ids[i]);
+        if (missing) throw new Error(`Rollen "${missing.name}" hittades inte.`);
+        await client.patch(`/guilds/${guildId}/roles`, ids.map((id, i) => ({ id, position: ids.length - i })));
+        break;
+      }
       case 'deleteRole':
         await client.delete(`/guilds/${guildId}/roles/${op.id}`);
         break;
