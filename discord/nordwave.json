@@ -1,0 +1,67 @@
+{
+  "_info": "Plan för Nordwave Studios. Visa ändringar: node cli.js plan nordwave.json",
+  "everyone": [
+    "CreateInstantInvite", "ChangeNickname", "ViewChannel", "ReadMessageHistory",
+    "SendMessages", "SendMessagesInThreads", "CreatePublicThreads", "EmbedLinks", "AttachFiles",
+    "AddReactions", "UseExternalEmojis", "UseExternalStickers", "UseApplicationCommands", "UseExternalApps",
+    "SendVoiceMessages", "SendPolls",
+    "Connect", "Speak", "Stream", "UseVAD", "RequestToSpeak",
+    "UseEmbeddedActivities", "UseSoundboard", "UseExternalSounds", "SetVoiceChannelStatus"
+  ],
+  "roles": [
+    { "name": "Koloss", "color": "#992d22", "hoist": true, "permissions": ["Administrator"] },
+    {
+      "name": "Moderator", "color": "#3498db", "hoist": true, "mentionable": true,
+      "permissions": [
+        "ManageMessages", "ManageThreads", "KickMembers", "ModerateMembers", "MuteMembers",
+        "DeafenMembers", "MoveMembers", "ManageNicknames", "ViewAuditLog", "MentionEveryone", "CreateEvents"
+      ]
+    },
+    { "name": "Medlem", "color": "#2ecc71", "hoist": true, "permissions": ["CreatePrivateThreads", "CreateEvents"] },
+    { "name": "Rekryt", "color": "#1f8b4c", "hoist": true }
+  ],
+  "channels": [
+    {
+      "name": "Information",
+      "type": "category",
+      "overwrites": {
+        "@everyone": { "deny": ["SendMessages", "CreatePublicThreads"] },
+        "Moderator": { "allow": ["SendMessages"] }
+      },
+      "channels": [
+        { "name": "välkommen", "topic": "Välkommen till Nordwave Studios!" },
+        { "name": "regler", "topic": "Läs reglerna innan du skriver." },
+        { "name": "nyheter", "topic": "Uppdateringar från teamet." }
+      ]
+    },
+    {
+      "name": "Textkanaler",
+      "type": "category",
+      "channels": [
+        { "name": "allmänt", "topic": "Prata om allt." },
+        { "name": "presentera-dig", "topic": "Berätta vem du är." },
+        { "name": "off-topic", "slowmode": 5 }
+      ]
+    },
+    {
+      "name": "Röstkanaler",
+      "type": "category",
+      "channels": [
+        { "name": "Allmänt", "type": "voice" },
+        { "name": "Möte", "type": "voice", "userLimit": 10 }
+      ]
+    },
+    {
+      "name": "Moderering",
+      "type": "category",
+      "overwrites": {
+        "@everyone": { "deny": ["ViewChannel"] },
+        "Moderator": { "allow": ["ViewChannel"] }
+      },
+      "channels": [
+        { "name": "mod-chatt" },
+        { "name": "mod-logg" }
+      ]
+    }
+  ]
+}
