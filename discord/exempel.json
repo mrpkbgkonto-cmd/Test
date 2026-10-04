@@ -1,0 +1,47 @@
+{
+  "_info": "Exempel på en komplett server. Testa: node cli.js plan exempel.json",
+  "everyone": ["ViewChannel", "SendMessages", "ReadMessageHistory", "AddReactions", "EmbedLinks", "AttachFiles", "UseExternalEmojis", "UseApplicationCommands", "CreateInstantInvite", "ChangeNickname", "Connect", "Speak"],
+  "roles": [
+    { "name": "Admin", "color": "#e74c3c", "hoist": true, "permissions": ["Administrator"] },
+    { "name": "Moderator", "color": "#3498db", "hoist": true, "mentionable": true, "permissions": ["ManageMessages", "KickMembers", "ModerateMembers", "MuteMembers", "MoveMembers", "ManageNicknames"] },
+    { "name": "Medlem", "color": "#2ecc71" }
+  ],
+  "channels": [
+    {
+      "name": "Information",
+      "type": "category",
+      "overwrites": { "@everyone": { "deny": ["SendMessages"] }, "Moderator": { "allow": ["SendMessages"] } },
+      "channels": [
+        { "name": "välkommen", "topic": "Välkommen till servern!" },
+        { "name": "regler", "topic": "Läs reglerna innan du skriver." },
+        { "name": "nyheter", "topic": "Uppdateringar från teamet." }
+      ]
+    },
+    {
+      "name": "Community",
+      "type": "category",
+      "channels": [
+        { "name": "allmänt", "topic": "Prata om allt." },
+        { "name": "presentera-dig" },
+        { "name": "off-topic", "slowmode": 5 }
+      ]
+    },
+    {
+      "name": "Röst",
+      "type": "category",
+      "channels": [
+        { "name": "Lounge", "type": "voice" },
+        { "name": "Spel", "type": "voice", "userLimit": 10 }
+      ]
+    },
+    {
+      "name": "Moderering",
+      "type": "category",
+      "overwrites": { "@everyone": { "deny": ["ViewChannel"] }, "Moderator": { "allow": ["ViewChannel"] } },
+      "channels": [
+        { "name": "mod-chatt" },
+        { "name": "mod-logg" }
+      ]
+    }
+  ]
+}

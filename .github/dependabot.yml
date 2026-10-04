@@ -11,6 +11,16 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+  - package-ecosystem: npm
+    directory: /discord
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      discord:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

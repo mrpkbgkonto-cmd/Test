@@ -2,6 +2,8 @@
 
 Enkel webbapp där småföretagare skapar fakturor som PDF.
 
+> Repot innehåller även [`discord/`](discord/README.md) – ett verktyg för att styra en Discord-server.
+
 - **Gratis:** full funktion, men PDF:en får vattenstämpel + "Skapad gratis med …" (gratis marknadsföring för dig).
 - **Pro (99 kr / 365 dagar):** köps via Stripe, tar bort vattenstämpeln.
 

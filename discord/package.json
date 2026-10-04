@@ -1,0 +1,17 @@
+{
+  "name": "discord-admin",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Styr en Discord-server från terminalen: exportera, planera och applicera roller, kanaler och behörigheter.",
+  "bin": { "discord-admin": "cli.js" },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "discord-api-types": "^0.38.56"
+  }
+}
